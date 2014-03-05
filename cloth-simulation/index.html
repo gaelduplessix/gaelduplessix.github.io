@@ -87,6 +87,7 @@
 				;
 				deltaTime = deltaTime > (50/1000) ? (50/1000) : deltaTime;
 				
+				deltaTime *= GUIControls.timeShift;
 				animateSpheres(deltaTime);
 				
 				cloth.animate(deltaTime);
@@ -178,24 +179,26 @@
 			}
 			
 			function initControls() {
-			                                
+
+                GUIControls = {};
+                GUIControls.preset = 'flag';
+                
                 // GUI
-                function initGUIValues () {
-                    GUIControls = {
-                        preset: 'flag',
-                        // World
-                        gravity: -(gravity.y/9.81),
-                        windX: air.speed.x,
-                        windY: air.speed.y,
-                        windZ: air.speed.z,
-                        // Controls
-                        wireframe: false,
-                        clothGizmo: false,
-                        sphereGizmo: false,
-                        sphereRotation: spheres[0].angularVelocity.y,
-                        detach: function () {
-                            cloth.detach();
-                        }
+                function initGUIValues () {                    
+                    // World
+                    GUIControls.gravity = -(gravity.y/9.81)+0.01;
+                    GUIControls.windX = air.speed.x;
+                    GUIControls.windY = air.speed.y;
+                    GUIControls.windZ = air.speed.z;
+                    GUIControls.timeShift = 1.001;
+                    // Controls
+                    GUIControls.wireframe = false;
+                    GUIControls.clothGizmo = false;
+                    GUIControls.sphereGizmo = false;
+                    GUIControls.sphereRotation = spheres[0].angularVelocity.y;
+                    GUIControls.throwSpeed = 4.5;
+                    GUIControls.detach = function () {
+                        cloth.detach();
                     };
                 }
                 initGUIValues();
@@ -223,7 +226,8 @@
                     world.add(GUIControls, 'windZ', -5, 5).onChange(function (value) {
                         air.speed.z = value;
                     });
-
+                    world.add(GUIControls, 'timeShift', 0, 2);
+                    
                     var controls = gui.addFolder('Controls');
                     controls.add(GUIControls, 'wireframe').onChange(function (value) {
                         var i, l;
@@ -249,6 +253,7 @@
                     controls.add(GUIControls, 'sphereRotation', -1, 1).onChange(function (value) {
                         spheres[0].angularVelocity.set(0, value, 0);
                     });
+                    controls.add(GUIControls, 'throwSpeed', 0, 5);
                     controls.add(GUIControls, 'detach');
                 });
                 
@@ -263,7 +268,7 @@
                         sphere.mass = 0.0001;
                         sphere.position.copy(camera.position);
                         sphere.velocity.copy(orbitControl.target).sub(camera.position).normalize();
-                        sphere.velocity.multiplyScalar(8);
+                        sphere.velocity.multiplyScalar(GUIControls.throwSpeed);
                     }                    
                 });                
 

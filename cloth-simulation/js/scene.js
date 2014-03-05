@@ -71,7 +71,7 @@ function setupScene(parameters) {
 	scene.add(plane);
 
     // Cloth
-	cloth = new Cloth(clothMaterial, camera, scene, {
+    var clothParameters = {
 	    customParticlePos: function(particle, cloth, x, y) {
     	    if (parameters.mode == 'hammock') {
         	     particle.position.set(
@@ -107,7 +107,30 @@ function setupScene(parameters) {
                 }
             }
 	    }
-	});
+	};
+	if (parameters.mode == 'flag') {
+        clothParameters.simulationSamples = 10;
+        clothParameters.width = 2;
+        clothParameters.height = 1.5;
+        clothParameters.mass = 0.3;
+        clothParameters.subDivsX =30;
+        clothParameters.subDivsY = 15;
+	} else if (parameters.mode == 'sheet') {
+        clothParameters.simulationSamples = 20;
+        clothParameters.width = 2;
+        clothParameters.height = 2;
+        clothParameters.mass = 0.3;
+        clothParameters.subDivsX = 20;
+        clothParameters.subDivsY = 20;
+	} else if (parameters.mode == 'hammock') {
+        clothParameters.simulationSamples = 20;
+        clothParameters.width = 2;
+        clothParameters.height = 2;
+        clothParameters.mass = 0.3;
+        clothParameters.subDivsX = 20;
+        clothParameters.subDivsY = 20;
+	}
+	cloth = new Cloth(clothMaterial, camera, scene, clothParameters);
 	
 	scene.add(cloth);	
 	
@@ -119,18 +142,20 @@ function setupScene(parameters) {
 	sphereControl.attach(sphere);
 	
 	// Add flag pole
-	poleMaterial = new THREE.MeshPhongMaterial({
-	    color: 0xffffff,
-	    reflectivity: 0.5,
-	    specular: new THREE.Color(0xffffff)
-	});
-	materials.push(poleMaterial);
-	pole = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 5), poleMaterial);
-	pole.position.set(-1, -3.5, 0);
-	scene.add(pole);
-	var poleHead = new THREE.Mesh(new THREE.SphereGeometry(0.02), poleMaterial);
-	poleHead.position.set(-1, -1, 0);
-	scene.add(poleHead);
+	if (parameters.mode == 'flag') {
+    	poleMaterial = new THREE.MeshPhongMaterial({
+    	    color: 0xffffff,
+    	    reflectivity: 0.5,
+    	    specular: new THREE.Color(0xffffff)
+    	});
+    	materials.push(poleMaterial);
+    	pole = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 5), poleMaterial);
+    	pole.position.set(-1, -3.5, 0);
+    	scene.add(pole);
+    	var poleHead = new THREE.Mesh(new THREE.SphereGeometry(0.02), poleMaterial);
+    	poleHead.position.set(-1, -1, 0);
+    	scene.add(poleHead);
+    }
 	
 	// lights
 	light = new THREE.AmbientLight(0x222222);
@@ -164,10 +189,10 @@ function setupScene(parameters) {
     sphere.receiveShadow = true;
     plane.receiveShadow = true;
 	
-	initCubemap();
+	setupCubemap();
 }
 
-function initCubemap() {
+function setupCubemap() {
     // Cubemap
     var path = "img/cubemaps/Park3Med/";
     var format = '.jpg';
@@ -180,7 +205,9 @@ function initCubemap() {
     var reflectionCube = THREE.ImageUtils.loadTextureCube( urls );
     reflectionCube.format = THREE.RGBFormat;
     
-    poleMaterial.envMap = reflectionCube;
+    if (poleMaterial) {
+        poleMaterial.envMap = reflectionCube;
+    }    
 
 	// Skybox
     var shader = THREE.ShaderLib[ "cube" ];
