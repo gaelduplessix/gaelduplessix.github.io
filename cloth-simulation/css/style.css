@@ -1,0 +1,38 @@
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 300;
+  src: local('Open Sans Light'), local('OpenSans-Light'), url(fonts/Open_Sans/OpenSans-Light.ttf);
+}
+
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans'), local('OpenSans'), url(fonts/Open_Sans/OpenSans-Regular.ttf);
+}
+
+body {
+	font-size: 62.5%;
+	font-family: "Open Sans", "Trebuchet MS", "Arial", "Helvetica", "Verdana", "sans-serif";
+	padding: 0;
+	margin: 0;
+}
+
+#infos { 
+    position: absolute;
+    top: 0;
+    width: 100%;
+	text-align: right;
+	color: #ececec;
+	font-size: 30px;
+	font-weight: 200;
+	text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.8);
+}
+
+#infos h1 {
+    font-weight: 200;
+    font-size: 25px;
+    margin-top: 13px;
+    margin-right: 20px;
+}

@@ -1,0 +1,189 @@
+<html>
+	<head>
+		<title>Final project</title>
+		<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+				
+		<link rel="stylesheet" href="css/style.css">
+	</head>
+	<body>
+		<section id="container">            
+		</section>
+		<section id="infos">
+			<h1>CSE 169 Final Project</h1>
+		</section>
+		
+		<!-- JS Libs -->
+		<script type="text/javascript" src="js/lib/jquery-2.1.0.js"></script>
+		<script type="text/javascript" src="js/lib/three.js"></script>
+		<script type="text/javascript" src="js/lib/orbit-controls.js"></script>
+		<script type="text/javascript" src="js/lib/transform-controls.js"></script>
+		<script type="text/javascript" src="js/lib/stats.min.js"></script>
+		
+		<!-- Application -->
+		<script type="text/javascript" src="js/spring-damper.js"></script>		
+		<script type="text/javascript" src="js/cloth-geometry.js"></script>
+		<script type="text/javascript" src="js/cloth.js"></script>		
+		
+		<script type="text/javascript">		
+            var container, stats;
+
+			var camera, controls, scene, renderer;
+
+            var plane;
+			var cloth, air, gravity;
+
+			init();
+			animate();
+
+			function init() {			
+			    // Renderer
+				renderer = new THREE.WebGLRenderer({antialias: false, devicePixelsRation: 1});				
+				renderer.setSize(window.innerWidth, window.innerHeight);
+				
+				container = document.getElementById('container');
+				container.appendChild(renderer.domElement);				
+				
+			    // Camera
+				camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);				
+				controls = new THREE.OrbitControls(camera);
+
+				// world
+				scene = new THREE.Scene();
+				scene.fog = new THREE.FogExp2(0x424242, 0.02);
+				renderer.setClearColor(scene.fog.color, 1);
+
+                //var planeTexture = THREE.ImageUtils.loadTexture('img/checkerboard.jpg');
+                var planeTexture = THREE.ImageUtils.loadTexture('img/snow.jpg');
+                planeTexture.wrapS = planeTexture.wrapT = THREE.RepeatWrapping; 
+                planeTexture.repeat.set(1, 1);
+				var planeMaterial =  new THREE.MeshPhongMaterial({color:0xffffff, wireframe: false, map: planeTexture});
+				
+				var clothTexture = THREE.ImageUtils.loadTexture('img/us_flag.jpg');
+                clothTexture.wrapS = clothTexture.wrapT = THREE.RepeatWrapping; 
+                clothTexture.repeat.set(1, 1);
+				var clothMaterial =  new THREE.MeshPhongMaterial({color:0xffffff, wireframe: false, side: THREE.DoubleSide, map: clothTexture});
+				
+				plane = new THREE.Mesh(new THREE.PlaneGeometry(100, 100, 20, 20), planeMaterial);
+				plane.position.y = -5;
+				plane.rotation.x = -Math.PI/2;
+				plane.bounce = 0;
+				plane.friction = 0.4;
+				
+				camera.position.y = 3 + plane.position.y;
+				camera.position.z = 6;
+				controls.target.y = 3 + plane.position.y;				
+				
+				scene.add(plane);
+
+                // Cloth
+				cloth = new Cloth(clothMaterial, camera, scene, renderer);
+				//cloth.detach();
+				scene.add(cloth);
+                gravity = new THREE.Vector3(0, -9.81*0, 0);
+				air = {
+				    speed: new THREE.Vector3(1, 0, 0),
+				    density: 1.2,
+				    dragCoeff: 1.2
+				};
+				
+				// Add flag pole
+				var poleMaterial = new THREE.MeshPhongMaterial({color: 0xffffff});
+				pole = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 5), poleMaterial);
+				pole.position.set(-1, -3.5, 0);
+				scene.add(pole);
+				poleHead = new THREE.Mesh(new THREE.SphereGeometry(0.02), poleMaterial);
+				poleHead.position.set(-1, -1, 0);
+				scene.add(poleHead);
+				
+
+				// lights
+				light = new THREE.AmbientLight(0x222222);
+				scene.add(light);
+				
+				light = new THREE.PointLight(0xffffff);
+				light.position.set(10, 10, 10);
+				light.intensity = 0.8;
+				scene.add(light);
+				light = new THREE.PointLight(0xffffff);
+				light.position.set(-10, 10, -10);
+				light.intensity = 0.5;
+				scene.add(light);
+				
+				initCubemap();
+								
+				// Stats
+				stats = new Stats();
+				stats.domElement.style.position = 'absolute';
+				stats.domElement.style.top = '0px';
+				stats.domElement.style.zIndex = 100;
+				container.appendChild(stats.domElement);
+
+				window.addEventListener('resize', onWindowResize, false);
+			}
+			
+			function initCubemap() {
+                // Cubemap
+                var path = "img/cubemaps/Park3Med/";
+                var format = '.jpg';
+                var urls = [
+                    path + 'posx' + format, path + 'negx' + format,
+                    path + 'posy' + format, path + 'negy' + format,
+                    path + 'posz' + format, path + 'negz' + format
+                ];
+
+                var reflectionCube = THREE.ImageUtils.loadTextureCube( urls );
+                reflectionCube.format = THREE.RGBFormat;
+
+				// Skybox
+                var shader = THREE.ShaderLib[ "cube" ];
+                shader.uniforms[ "tCube" ].value = reflectionCube;
+
+                var material = new THREE.ShaderMaterial( {
+                    fragmentShader: shader.fragmentShader,
+                    vertexShader: shader.vertexShader,
+                    uniforms: shader.uniforms,
+                    depthWrite: false,
+                    side: THREE.BackSide
+				});
+
+				var cubemapMesh = new THREE.Mesh(new THREE.BoxGeometry( 100, 100, 100 ), material);
+				scene.add(cubemapMesh);
+			}
+
+			function onWindowResize() {
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+				renderer.setSize(window.innerWidth, window.innerHeight);				
+				render();
+			}
+			
+            var prevTime;
+
+			function animate() {
+				requestAnimationFrame(animate);
+				controls.update();
+				cloth.control.update();
+				
+				prevTime = prevTime || new Date().getTime();
+				var
+				    now = new Date().getTime(),
+				    deltaTime = (now - prevTime) / 1000;
+				;
+				
+				air.speed.x = 1;
+				//cloth.control.position.z = Math.cos((new Date().getTime()/1000)*4)*0.2;
+				
+				deltaTime = deltaTime > (50/1000) ? (50/1000) : deltaTime;
+				cloth.animate(deltaTime);
+				render();
+				prevTime = now;
+			}
+
+			function render() {
+				renderer.render(scene, camera);
+				stats.update();
+			}	    
+		</script>
+		
+    </body>
+</html>
