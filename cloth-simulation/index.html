@@ -1,6 +1,6 @@
 <html>
 	<head>
-		<title>Final project</title>
+		<title>Cloth Simulation</title>
 		<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
 				
 		<link rel="stylesheet" href="css/style.css">
@@ -9,7 +9,7 @@
 		<section id="container">            
 		</section>
 		<section id="infos">
-			<h1>CSE 169 Final Project</h1>
+			<h1>CSE 169 Final Project - Cloth Simulation</h1>
 		</section>
 		
 		<!-- JS Libs -->
@@ -17,6 +17,7 @@
 		<script type="text/javascript" src="js/lib/three.js"></script>
 		<script type="text/javascript" src="js/lib/orbit-controls.js"></script>
 		<script type="text/javascript" src="js/lib/transform-controls.js"></script>
+		<script type="text/javascript" src="js/lib/dat.gui.min.js"></script>
 		<script type="text/javascript" src="js/lib/stats.min.js"></script>
 		
 		<!-- Application -->
@@ -27,12 +28,15 @@
 		<script type="text/javascript">		
             var container, stats;
 
-			var camera, controls, scene, renderer;
+			var camera, orbitControl, scene, renderer;
 
-            var plane;
+            var materials = [];
+            var plane, sphere, sphereControl;
 			var cloth, air, gravity;
+			var GUIControls;
 
 			init();
+			initControls();
 			animate();
 
 			function init() {			
@@ -44,24 +48,32 @@
 				container.appendChild(renderer.domElement);				
 				
 			    // Camera
-				camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);				
-				controls = new THREE.OrbitControls(camera);
+				camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 10000);				
+				orbitControl = new THREE.OrbitControls(camera, renderer.domElement);
+				orbitControl.maxDistance = 50;
 
 				// world
 				scene = new THREE.Scene();
-				scene.fog = new THREE.FogExp2(0x424242, 0.02);
+				scene.fog = new THREE.FogExp2(0x424242, 0.02*0);
 				renderer.setClearColor(scene.fog.color, 1);
 
-                //var planeTexture = THREE.ImageUtils.loadTexture('img/checkerboard.jpg');
                 var planeTexture = THREE.ImageUtils.loadTexture('img/snow.jpg');
                 planeTexture.wrapS = planeTexture.wrapT = THREE.RepeatWrapping; 
                 planeTexture.repeat.set(1, 1);
 				var planeMaterial =  new THREE.MeshPhongMaterial({color:0xffffff, wireframe: false, map: planeTexture});
+				materials.push(planeMaterial);
 				
-				var clothTexture = THREE.ImageUtils.loadTexture('img/us_flag.jpg');
+				var clothTexture = THREE.ImageUtils.loadTexture('img/us-flag.jpg');
                 clothTexture.wrapS = clothTexture.wrapT = THREE.RepeatWrapping; 
                 clothTexture.repeat.set(1, 1);
-				var clothMaterial =  new THREE.MeshPhongMaterial({color:0xffffff, wireframe: false, side: THREE.DoubleSide, map: clothTexture});
+				var clothMaterial =  new THREE.MeshPhongMaterial({
+				    color:0xffffff,
+				    wireframe: false,
+				    side: THREE.DoubleSide,
+				    map: clothTexture,
+				    specular: new THREE.Color(0.2, 0.2, 0.2)
+				});
+				materials.push(clothMaterial);
 				
 				plane = new THREE.Mesh(new THREE.PlaneGeometry(100, 100, 20, 20), planeMaterial);
 				plane.position.y = -5;
@@ -69,9 +81,9 @@
 				plane.bounce = 0;
 				plane.friction = 0.4;
 				
-				camera.position.y = 3 + plane.position.y;
+				camera.position.y = 2 + plane.position.y;
 				camera.position.z = 6;
-				controls.target.y = 3 + plane.position.y;				
+				orbitControl.target.y = 2 + plane.position.y;
 				
 				scene.add(plane);
 
@@ -79,35 +91,76 @@
 				cloth = new Cloth(clothMaterial, camera, scene, renderer);
 				//cloth.detach();
 				scene.add(cloth);
-                gravity = new THREE.Vector3(0, -9.81*0, 0);
+				gravity = new THREE.Vector3();
 				air = {
-				    speed: new THREE.Vector3(1, 0, 0),
+				    speed: new THREE.Vector3(1, 0.01, 0.01),
 				    density: 1.2,
 				    dragCoeff: 1.2
 				};
 				
+				// Sphere
+				var sphereTexture = THREE.ImageUtils.loadTexture('img/checkerboard.jpg');
+				sphereTexture.wrapS = sphereTexture.wrapT = THREE.RepeatWrapping;
+				sphereTexture.repeat.set(3, 3);
+				var sphereMaterial = new THREE.MeshPhongMaterial({color:0xffffff, map: sphereTexture, specular: new THREE.Color(0.3, 0.3, 0.3)});
+				materials.push(sphereMaterial);
+				sphere = new THREE.Mesh(new THREE.SphereGeometry(0.5, 20, 20), sphereMaterial);
+				sphere.position.set(0, -2, -0.7);
+				sphere.position.y = -4;
+				sphere.velocity = new THREE.Vector3();
+				sphere.angularVelocity = new THREE.Vector3(0, 0.5, 0);
+				sphere.mass = 0;
+				sphere.bounce = 0;
+				sphere.friction = 0.8;
+				scene.add(sphere);
+				
+                sphereControl = new THREE.TransformControls(camera, renderer.domElement);
+            	sphereControl.attach(sphere);
+				
 				// Add flag pole
 				var poleMaterial = new THREE.MeshPhongMaterial({color: 0xffffff});
-				pole = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 5), poleMaterial);
+				materials.push(poleMaterial);
+				var pole = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 5), poleMaterial);
 				pole.position.set(-1, -3.5, 0);
 				scene.add(pole);
-				poleHead = new THREE.Mesh(new THREE.SphereGeometry(0.02), poleMaterial);
+				var poleHead = new THREE.Mesh(new THREE.SphereGeometry(0.02), poleMaterial);
 				poleHead.position.set(-1, -1, 0);
 				scene.add(poleHead);
 				
-
 				// lights
 				light = new THREE.AmbientLight(0x222222);
 				scene.add(light);
 				
-				light = new THREE.PointLight(0xffffff);
+				light = new THREE.SpotLight(0xffffff);
 				light.position.set(10, 10, 10);
-				light.intensity = 0.8;
+				light.intensity = 1;
 				scene.add(light);
+
+
+                // Shadow maps
+                renderer.shadowMapEnabled = true;
+                
+                light.shadowBias = 0.00001;
+				light.shadowDarkness = 0.5;
+				
+				light.shadowCameraNear = 8;
+				light.shadowCameraFar = 50;
+				light.shadowMapWidth = 1024;
+				light.shadowMapHeight = 1024;
+				
+                
+                light.castShadow = true;
+                sphere.castShadow = true;
+                cloth.castShadow = true;
+                pole.castShadow = true;
+                sphere.receiveShadow = true;
+                plane.receiveShadow = true;
+                
 				light = new THREE.PointLight(0xffffff);
 				light.position.set(-10, 10, -10);
 				light.intensity = 0.5;
-				scene.add(light);
+				scene.add(light);                
+
 				
 				initCubemap();
 								
@@ -145,8 +198,9 @@
                     depthWrite: false,
                     side: THREE.BackSide
 				});
+				materials.push(material);
 
-				var cubemapMesh = new THREE.Mesh(new THREE.BoxGeometry( 100, 100, 100 ), material);
+				var cubemapMesh = new THREE.Mesh(new THREE.BoxGeometry(150, 150, 150), material);
 				scene.add(cubemapMesh);
 			}
 
@@ -161,7 +215,8 @@
 
 			function animate() {
 				requestAnimationFrame(animate);
-				controls.update();
+				orbitControl.update();
+				sphereControl.update();
 				cloth.control.update();
 				
 				prevTime = prevTime || new Date().getTime();
@@ -169,11 +224,20 @@
 				    now = new Date().getTime(),
 				    deltaTime = (now - prevTime) / 1000;
 				;
-				
-				air.speed.x = 1;
-				//cloth.control.position.z = Math.cos((new Date().getTime()/1000)*4)*0.2;
-				
 				deltaTime = deltaTime > (50/1000) ? (50/1000) : deltaTime;
+				
+				// Animate sphere
+				sphere.rotateOnAxis(sphere.angularVelocity, sphere.angularVelocity.length()*deltaTime);
+				
+				// Compute sphere speed
+				if (sphere.oldPosition) {
+    				sphere.velocity.copy(sphere.position).sub(sphere.oldPosition).divideScalar(deltaTime);
+    				sphere.oldPosition.copy(sphere.position);
+				} else {
+    				sphere.oldPosition = new THREE.Vector3();
+    				sphere.oldPosition.copy(sphere.position);
+				}
+
 				cloth.animate(deltaTime);
 				render();
 				prevTime = now;
@@ -182,7 +246,93 @@
 			function render() {
 				renderer.render(scene, camera);
 				stats.update();
-			}	    
+			}
+			
+			function initControls() {
+			
+                // Cloth controls
+                $(window).keydown(function (event) {
+                    switch ( event.keyCode ) {
+                        case 87: // W
+                            cloth.control.setMode('translate');
+                            break;
+                        case 69: // E
+                            cloth.control.setMode('rotate');
+                            break;
+    					case 187:
+    					case 107: // +,=,num+
+    						cloth.control.setSize( control.size + 0.1 );
+    						break;
+    					case 189:
+    					case 10: // -,_,num-
+    						cloth.control.setSize( Math.max(control.size - 0.1, 0.1 ) );
+                            break;
+                    }
+                });
+                
+                // GUI
+                GUIControls = {
+                    // World
+                    gravity: gravity.y,
+                    windX: air.speed.x,
+                    windY: air.speed.y,
+                    windZ: air.speed.z,
+                    // Controls
+                    wireframe: false,
+                    clothGizmo: false,
+                    sphereGizmo: false,
+                    sphereRotation: 0.5,
+                    detach: function () {
+                        cloth.detach();
+                    }
+                };
+                
+                $(function () {
+                    var gui = new dat.GUI();
+                    
+                    var world = gui.addFolder('World');
+                    world.add(GUIControls, 'gravity', -1, 1).onChange(function (value) {
+                        gravity.set(0, -9.81, 0).multiplyScalar(value);
+                    });
+                    world.add(GUIControls, 'windX', -5, 5).onChange(function (value) {
+                        air.speed.x = value;
+                    });
+                    world.add(GUIControls, 'windY', -5, 5).onChange(function (value) {
+                        air.speed.y = value;
+                    });
+                    world.add(GUIControls, 'windZ', -5, 5).onChange(function (value) {
+                        air.speed.z = value;
+                    });
+
+                    var controls = gui.addFolder('Controls');
+                    controls.add(GUIControls, 'wireframe').onChange(function (value) {
+                        var i, l;
+                        
+                        for (i = 0, l = materials.length; i < l; i += 1) {
+                            materials[i].wireframe = value;
+                        }
+                    });
+                    controls.add(GUIControls, 'clothGizmo').onChange(function (value) {
+                        if (value) {
+                            scene.add(cloth.control);
+                        } else {
+                            scene.remove(cloth.control);
+                        }
+                    });
+                    controls.add(GUIControls, 'sphereGizmo').onChange(function (value) {
+                        if (value) {
+                            scene.add(sphereControl);
+                        } else {
+                            scene.remove(sphereControl);
+                        }
+                    });                    
+                    controls.add(GUIControls, 'sphereRotation', -1, 1).onChange(function (value) {
+                        sphere.angularVelocity.set(0, value, 0);
+                    });
+                    controls.add(GUIControls, 'detach');
+                });
+
+            }
 		</script>
 		
     </body>

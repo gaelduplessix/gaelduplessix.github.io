@@ -556,6 +556,8 @@
 
 		var scope = this;
 		
+		THREE.TransformControls.dragging = false;
+		
 		var _dragging = false;
 		var _mode = "translate";
 		var _plane = "XY";
@@ -748,6 +750,8 @@
 				if ( intersect ) {
 				
 				    event.stopPropagation();
+				    
+				    THREE.TransformControls.dragging = true;
 
 					scope.axis = intersect.object.name;
 
@@ -948,6 +952,7 @@
 
 		function onPointerUp( event ) {
 
+			THREE.TransformControls.dragging = false;
 			_dragging = false;
 			onPointerHover( event );
 

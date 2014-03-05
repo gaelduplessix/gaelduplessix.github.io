@@ -5,7 +5,7 @@
 var Cloth = function (material, camera, scene, parameters) {
     parameters = parameters || {};
      
-    this.simulationSamples = parameters.simulationSamples || 30;
+    this.simulationSamples = parameters.simulationSamples || 10;
      
     this.width = parameters.width || 2;
     this.height = parameters.height || 1.5;
@@ -44,6 +44,7 @@ var Cloth = function (material, camera, scene, parameters) {
                 mass: this.mass / (this.subDivsX*this.subDivsY),
                 position: new THREE.Vector3(
                     (x/this.subDivsX)*this.width - this.width/2,
+                    //0,
                     -(y/this.subDivsY)*this.height,
                     0
                 ),
@@ -124,12 +125,12 @@ var Cloth = function (material, camera, scene, parameters) {
     
     // Add little random offsets
     for (x = 0; x < this.particles.length; x += 1) {
-        this.particles[x].position.z += ((Math.random()*2)-1) * 0.1;
-        this.particles[x].position.x += ((Math.random()*2)-1) * 0.1;
+        this.particles[x].position.z += ((Math.random()*2)-1) * 0.01;
+        this.particles[x].position.x += ((Math.random()*2)-1) * 0.01;
     }
     
     // Set attach particles
-    for (var i = 0; i < this.subDivsY; i += 1) {
+    for (var i = 0; i < this.subDivsX; i += 1) {
         particle = this.particles[0*this.subDivsY + i];
         this.attachedParticles.push(particle);
         particle.mass = 0;
@@ -144,7 +145,6 @@ var Cloth = function (material, camera, scene, parameters) {
 Cloth.prototype = Object.create(THREE.Mesh.prototype);
 
 Cloth.prototype.animate = function (deltaTime) {
-    this.simulationSamples = 10;
     for (var i = 0; i < this.simulationSamples; i += 1) {
         this.computeForces();
         this.integrateMotion(deltaTime / this.simulationSamples);
@@ -227,7 +227,9 @@ Cloth.prototype.integrateMotion = function (deltaTime) {
             // Attached particles
             if (this.attached) {
                 particle.acceleration.set(0, 0, 0);
-                particle.position.copy(this.control.position).add(particle.offset);
+                particle.position.copy(particle.offset);
+                particle.position.applyEuler(this.control.object.rotation);
+                particle.position.add(this.control.position);                
             }            
         }
         tmp.copy(particle.acceleration);
@@ -243,21 +245,63 @@ Cloth.prototype.integrateMotion = function (deltaTime) {
 };
 
 Cloth.prototype.handleCollisions = function () {
-    var i, l, particle;
-    
     var epsilon = 0.01;
+    var i, l, particle, v = new THREE.Vector3(), normal = new THREE.Vector3();
     
     for (i = 0, l = this.particles.length; i < l; i += 1) {
         particle = this.particles[i];
-        // Cheezy plane collision
+        
+        // Plane collision
         if (particle.position.y < (plane.position.y + epsilon)) {
             particle.position.y = plane.position.y + epsilon;
             particle.velocity.y = -plane.bounce*particle.velocity.y;
             particle.velocity.x = (1-plane.friction)*particle.velocity.x;
             particle.velocity.z = (1-plane.friction)*particle.velocity.z;
         }
+        
+        // Sphere collision
+        v.copy(particle.position).sub(sphere.position);
+        if (v.length() < sphere.geometry.radius + epsilon) {
+            normal.copy(v).normalize();
+            // Calc intersect point
+            v.copy(normal).multiplyScalar(sphere.geometry.radius + epsilon);
+            v.add(sphere.position);
+            // Apply impulse
+            this.applyCollisionImpulse(sphere, particle, v, normal);
+            // Reposition particle
+            particle.position.copy(v);
+        }
     }
 };
+
+Cloth.prototype.applyCollisionImpulse = function (object, particle, intersectPoint, normal) {
+    var
+        pointVelocity = new THREE.Vector3(),
+        vClose = new THREE.Vector3(), j, impulse = new THREE.Vector3(),
+        v = new THREE.Vector3(), tangent = new THREE.Vector3()
+    ;
+    
+    // Calc speed on object from intersect point and object COM
+    v.copy(intersectPoint).sub(object.position);
+    pointVelocity.copy(object.angularVelocity).cross(v);
+    pointVelocity.add(object.velocity);
+    
+    vClose.copy(particle.velocity).sub(pointVelocity);
+    
+    // Normal impulse
+    j = -(1 + object.bounce)*(vClose.dot(normal));
+    impulse.copy(normal).multiplyScalar(j);
+    particle.velocity.add(impulse);
+    
+    // Friction impulse
+    v.copy(normal);
+    v.multiplyScalar(v.dot(vClose));
+    tangent.copy(vClose).sub(v).normalize();
+    
+    j = -object.friction*tangent.dot(vClose);
+    impulse.copy(tangent).multiplyScalar(j);
+    particle.velocity.add(impulse);
+}
 
 Cloth.prototype.detach = function () {
     var i, l;

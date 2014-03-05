@@ -346,6 +346,10 @@ THREE.OrbitControls = function ( object, domElement ) {
 		if ( scope.enabled === false ) return;
 
 		event.preventDefault();
+		
+		if (THREE.TransformControls.dragging) {
+    		return ;
+		}
 
 		var element = scope.domElement === document ? scope.domElement.body : scope.domElement;
 
