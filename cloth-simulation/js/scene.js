@@ -37,10 +37,16 @@ function setupScene(parameters) {
 	var planeMaterial =  new THREE.MeshPhongMaterial({color:0xffffff, wireframe: false, map: planeTexture});
 	materials.push(planeMaterial);
 	
-	var clothTexture = THREE.ImageUtils.loadTexture('img/us-flag.jpg');
-	var normalsTexture = THREE.ImageUtils.loadTexture('img/fabric-normals.jpg');
-    clothTexture.wrapS = clothTexture.wrapT = THREE.RepeatWrapping; 
-    clothTexture.repeat.set(1, 1);
+	var clothTexture;
+	if (parameters.mode == 'flag') {
+    	clothTexture = THREE.ImageUtils.loadTexture('img/us-flag.jpg');
+	} else if (parameters.mode == 'sheet') {
+    	clothTexture = THREE.ImageUtils.loadTexture('img/california-flag.jpg');
+	} else {
+    	clothTexture = THREE.ImageUtils.loadTexture('img/checkerboard.jpg');
+	}
+	
+	var normalsTexture = THREE.ImageUtils.loadTexture('img/fabric-normals.jpg');    
 	var clothMaterial =  new THREE.MeshPhongMaterial({
 	    color:0xffffff,
 	    wireframe: false,
