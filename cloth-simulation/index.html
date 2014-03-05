@@ -23,20 +23,22 @@
 		<!-- Application -->
 		<script type="text/javascript" src="js/spring-damper.js"></script>		
 		<script type="text/javascript" src="js/cloth-geometry.js"></script>
-		<script type="text/javascript" src="js/cloth.js"></script>		
+		<script type="text/javascript" src="js/cloth.js"></script>
+		<script type="text/javascript" src="js/scene.js"></script>
 		
 		<script type="text/javascript">		
             var container, stats;
 
 			var camera, orbitControl, scene, renderer;
 
-            var materials = [];
-            var plane, sphere, sphereControl;
+            var materials;
+            var plane, spheres, sphereControl;
 			var cloth, air, gravity;
-			var pole, poleMaterial;
+			var poleMaterial;
 			var GUIControls;
 
 			init();
+			setupScene();
 			initControls();
 			animate();
 
@@ -46,132 +48,13 @@
 				renderer.setSize(window.innerWidth, window.innerHeight);
 				
 				container = document.getElementById('container');
-				container.appendChild(renderer.domElement);				
+				container.appendChild(renderer.domElement);
 				
 			    // Camera
 				camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 10000);				
 				orbitControl = new THREE.OrbitControls(camera, renderer.domElement);
-				orbitControl.maxDistance = 50;
-
-				// world
-				scene = new THREE.Scene();
-				scene.fog = new THREE.FogExp2(0x424242, 0.02*0);
-				renderer.setClearColor(scene.fog.color, 1);
-
-                var planeTexture = THREE.ImageUtils.loadTexture('img/snow.jpg');
-                planeTexture.wrapS = planeTexture.wrapT = THREE.RepeatWrapping; 
-                planeTexture.repeat.set(3, 3);
-				var planeMaterial =  new THREE.MeshPhongMaterial({color:0xffffff, wireframe: false, map: planeTexture});
-				materials.push(planeMaterial);
-				
-				var clothTexture = THREE.ImageUtils.loadTexture('img/us-flag.jpg');
-				var normalsTexture = THREE.ImageUtils.loadTexture('img/fabric-normals.jpg');
-                clothTexture.wrapS = clothTexture.wrapT = THREE.RepeatWrapping; 
-                clothTexture.repeat.set(1, 1);
-				var clothMaterial =  new THREE.MeshPhongMaterial({
-				    color:0xffffff,
-				    wireframe: false,
-				    side: THREE.DoubleSide,
-				    map: clothTexture,
-				    normalMap: normalsTexture,
-				    normalScale: new THREE.Vector2(0.1, 0.3),
-				    specular: new THREE.Color(0.2, 0.2, 0.2)
-				});
-				materials.push(clothMaterial);
-				
-				plane = new THREE.Mesh(new THREE.PlaneGeometry(100, 100, 20, 20), planeMaterial);
-				plane.position.y = -5;
-				plane.rotation.x = -Math.PI/2;
-				plane.bounce = 0;
-				plane.friction = 0.4;
-				
-				camera.position.y = 2 + plane.position.y;
-				camera.position.z = 6;
-				orbitControl.target.y = 2 + plane.position.y;
-				
-				scene.add(plane);
-
-                // Cloth
-				cloth = new Cloth(clothMaterial, camera, scene, renderer);
-				//cloth.detach();
-				scene.add(cloth);
-				gravity = new THREE.Vector3();
-				air = {
-				    speed: new THREE.Vector3(1, 0.01, 0.01),
-				    density: 1.2,
-				    dragCoeff: 1.2
-				};
-				
-				// Sphere
-				var sphereTexture = THREE.ImageUtils.loadTexture('img/checkerboard.jpg');
-				sphereTexture.wrapS = sphereTexture.wrapT = THREE.RepeatWrapping;
-				sphereTexture.repeat.set(3, 3);
-				var sphereMaterial = new THREE.MeshPhongMaterial({color:0xffffff, map: sphereTexture, specular: new THREE.Color(0.3, 0.3, 0.3)});
-				materials.push(sphereMaterial);
-				sphere = new THREE.Mesh(new THREE.SphereGeometry(0.5, 20, 20), sphereMaterial);
-				sphere.position.set(0, -2, -0.7);
-				sphere.position.y = -4;
-				sphere.velocity = new THREE.Vector3();
-				sphere.angularVelocity = new THREE.Vector3(0, 0.5, 0);
-				sphere.mass = 0;
-				sphere.bounce = 0;
-				sphere.friction = 0.8;
-				scene.add(sphere);
-				
-                sphereControl = new THREE.TransformControls(camera, renderer.domElement);
-            	sphereControl.attach(sphere);
-				
-				// Add flag pole
-				poleMaterial = new THREE.MeshPhongMaterial({
-				    color: 0xffffff,
-				    reflectivity: 0.5,
-				    specular: new THREE.Color(0xffffff)
-				});
-				materials.push(poleMaterial);
-				pole = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 5), poleMaterial);
-				pole.position.set(-1, -3.5, 0);
-				scene.add(pole);
-				var poleHead = new THREE.Mesh(new THREE.SphereGeometry(0.02), poleMaterial);
-				poleHead.position.set(-1, -1, 0);
-				scene.add(poleHead);
-				
-				// lights
-				light = new THREE.AmbientLight(0x222222);
-				scene.add(light);
-				
-				light = new THREE.SpotLight(0xffffff);
-				light.position.set(10, 10, 10);
-				light.intensity = 1;
-				scene.add(light);
-
-
-                // Shadow maps
-                renderer.shadowMapEnabled = true;
-                
-                light.shadowBias = 0.00001;
-				light.shadowDarkness = 0.5;
-				
-				light.shadowCameraNear = 8;
-				light.shadowCameraFar = 50;
-				light.shadowMapWidth = 2048;
-				light.shadowMapHeight = 2048;
-				
-                
-                light.castShadow = true;
-                sphere.castShadow = true;
-                cloth.castShadow = true;
-                pole.castShadow = true;
-                sphere.receiveShadow = true;
-                plane.receiveShadow = true;
-                
-				light = new THREE.PointLight(0xffffff);
-				light.position.set(-10, 10, -10);
-				light.intensity = 0.5;
-				scene.add(light);                
-
-				
-				initCubemap();
-								
+				orbitControl.maxDistance = 50;								
+               								
 				// Stats
 				stats = new Stats();
 				stats.domElement.style.position = 'absolute';
@@ -181,39 +64,7 @@
 
 				window.addEventListener('resize', onWindowResize, false);
 			}
-			
-			function initCubemap() {
-                // Cubemap
-                var path = "img/cubemaps/Park3Med/";
-                var format = '.jpg';
-                var urls = [
-                    path + 'posx' + format, path + 'negx' + format,
-                    path + 'posy' + format, path + 'negy' + format,
-                    path + 'posz' + format, path + 'negz' + format
-                ];
-
-                var reflectionCube = THREE.ImageUtils.loadTextureCube( urls );
-                reflectionCube.format = THREE.RGBFormat;
-                
-                poleMaterial.envMap = reflectionCube;
-
-				// Skybox
-                var shader = THREE.ShaderLib[ "cube" ];
-                shader.uniforms[ "tCube" ].value = reflectionCube;
-
-                var material = new THREE.ShaderMaterial( {
-                    fragmentShader: shader.fragmentShader,
-                    vertexShader: shader.vertexShader,
-                    uniforms: shader.uniforms,
-                    depthWrite: false,
-                    side: THREE.BackSide
-				});
-				materials.push(material);
-
-				var cubemapMesh = new THREE.Mesh(new THREE.BoxGeometry(150, 150, 150), material);
-				scene.add(cubemapMesh);
-			}
-
+			           
 			function onWindowResize() {
 				camera.aspect = window.innerWidth / window.innerHeight;
 				camera.updateProjectionMatrix();
@@ -236,21 +87,89 @@
 				;
 				deltaTime = deltaTime > (50/1000) ? (50/1000) : deltaTime;
 				
-				// Animate sphere
-				sphere.rotateOnAxis(sphere.angularVelocity, sphere.angularVelocity.length()*deltaTime);
+				animateSpheres(deltaTime);
 				
-				// Compute sphere speed
-				if (sphere.oldPosition) {
-    				sphere.velocity.copy(sphere.position).sub(sphere.oldPosition).divideScalar(deltaTime);
-    				sphere.oldPosition.copy(sphere.position);
-				} else {
-    				sphere.oldPosition = new THREE.Vector3();
-    				sphere.oldPosition.copy(sphere.position);
-				}
-
 				cloth.animate(deltaTime);
 				render();
 				prevTime = now;
+			}			
+			
+			function animateSpheres(deltaTime) {
+                // Animate spheres
+				var
+				    epsilon = 0.001,
+				    i, j, l, sphere, sphere2,
+				    tmp = new THREE.Vector3(),
+				    v =  new THREE.Vector3(),
+				    vClose = new THREE.Vector3(),
+				    impulseMag, impulse = new THREE.Vector3()
+				;
+				for (i = 0, l = spheres.length; i < l; i += 1) {				
+				    sphere = spheres[i];
+				    
+				    sphere.force.set(0, 0, 0);
+				    
+				    // Gravity
+				    tmp.copy(gravity).multiplyScalar(sphere.mass);
+				    sphere.force.add(tmp);
+				    
+				    // Integrate position
+				    if (sphere.mass > 0) {
+    				    sphere.acceleration.copy(sphere.force).divideScalar(sphere.mass);
+                        tmp.copy(sphere.acceleration);
+                        sphere.velocity.add(tmp.multiplyScalar(deltaTime));
+                        tmp.copy(sphere.velocity);
+                        sphere.position.add(tmp.multiplyScalar(deltaTime));    				    
+				    } else {
+    				    // Compute sphere speed based on position (if moved manually)
+        				if (sphere.oldPosition) {
+            				sphere.velocity.copy(sphere.position).sub(sphere.oldPosition).divideScalar(deltaTime);
+            				sphere.oldPosition.copy(sphere.position);
+        				} else {
+            				sphere.oldPosition = new THREE.Vector3();
+            				sphere.oldPosition.copy(sphere.position);
+        				}
+				    }				    
+				    
+				    // Integrate rotation
+    				sphere.rotateOnAxis(sphere.angularVelocity, sphere.angularVelocity.length()*deltaTime);
+    				
+                    // Plane collision
+                    if (sphere.position.y < (plane.position.y + sphere.geometry.radius + epsilon)) {
+                        sphere.position.y = plane.position.y + sphere.geometry.radius + epsilon;
+                        sphere.velocity.y = -plane.bounce*sphere.velocity.y;
+                        sphere.velocity.x = (1-plane.friction)*sphere.velocity.x;
+                        sphere.velocity.z = (1-plane.friction)*sphere.velocity.z;
+                    }
+                    
+                    // Spheres collision
+                    for (j = i + 1; j < l; j += 1) {
+                        sphere2 = spheres[j];
+                        v.copy(sphere2.position).sub(sphere.position);
+                        if (v.length() < (sphere.geometry.radius + sphere2.geometry.radius + epsilon)) {
+                            v.normalize();
+                            vClose.copy(sphere.velocity).sub(sphere2.velocity);
+                            
+                            impulseMag = (-(1 + sphere.bounce)*(vClose.dot(v)));
+    
+                            // Apply to spheres
+                            impulse.copy(v).multiplyScalar(impulseMag);
+                            if (sphere.mass > 0) {
+                                sphere.velocity.add(impulse);
+                            }
+                            if (sphere2.mass > 0) {
+                                sphere2.velocity.sub(impulse);
+                            }
+                            
+                            
+                            // Reposition sphere
+                            if (sphere2.mass > 0) {
+                                sphere2.position.copy(v).multiplyScalar(sphere.geometry.radius + sphere2.geometry.radius + epsilon);
+                                sphere2.position.add(sphere.position);
+                            }
+                        }
+                    }
+                }
 			}
 
 			function render() {
@@ -259,46 +178,37 @@
 			}
 			
 			function initControls() {
-			
-                // Cloth controls
-                $(window).keydown(function (event) {
-                    switch ( event.keyCode ) {
-                        case 87: // W
-                            cloth.control.setMode('translate');
-                            break;
-                        case 69: // E
-                            cloth.control.setMode('rotate');
-                            break;
-    					case 187:
-    					case 107: // +,=,num+
-    						cloth.control.setSize( control.size + 0.1 );
-    						break;
-    					case 189:
-    					case 10: // -,_,num-
-    						cloth.control.setSize( Math.max(control.size - 0.1, 0.1 ) );
-                            break;
-                    }
-                });
-                
+			                                
                 // GUI
-                GUIControls = {
-                    // World
-                    gravity: gravity.y,
-                    windX: air.speed.x,
-                    windY: air.speed.y,
-                    windZ: air.speed.z,
-                    // Controls
-                    wireframe: false,
-                    clothGizmo: false,
-                    sphereGizmo: false,
-                    sphereRotation: 0.5,
-                    detach: function () {
-                        cloth.detach();
-                    }
-                };
+                function initGUIValues () {
+                    GUIControls = {
+                        preset: 'flag',
+                        // World
+                        gravity: -(gravity.y/9.81),
+                        windX: air.speed.x,
+                        windY: air.speed.y,
+                        windZ: air.speed.z,
+                        // Controls
+                        wireframe: false,
+                        clothGizmo: false,
+                        sphereGizmo: false,
+                        sphereRotation: spheres[0].angularVelocity.y,
+                        detach: function () {
+                            cloth.detach();
+                        }
+                    };
+                }
+                initGUIValues();
                 
                 $(function () {
                     var gui = new dat.GUI();
+                    
+                    // Presets
+                    gui.add(GUIControls, 'preset', ['flag', 'sheet', 'hammock']).onChange(function (value) {
+                        setupScene({mode: value});
+                        // Update gui
+                        initGUIValues();
+                    });                    
                     
                     var world = gui.addFolder('World');
                     world.add(GUIControls, 'gravity', -1, 1).onChange(function (value) {
@@ -337,10 +247,25 @@
                         }
                     });                    
                     controls.add(GUIControls, 'sphereRotation', -1, 1).onChange(function (value) {
-                        sphere.angularVelocity.set(0, value, 0);
+                        spheres[0].angularVelocity.set(0, value, 0);
                     });
                     controls.add(GUIControls, 'detach');
                 });
+                
+                // Cloth gizmo mode
+                $(window).keydown(function (event) {
+                    if (event.keyCode == 87) { // W
+                        cloth.control.setMode('translate');                        
+                    } else if (event.keyCode == 69) { // E
+                        cloth.control.setMode('rotate');
+                    } else if (event.keyCode == 84) { // T
+                        var sphere = createSphere(0.4, new THREE.Vector3());                        
+                        sphere.mass = 0.0001;
+                        sphere.position.copy(camera.position);
+                        sphere.velocity.copy(orbitControl.target).sub(camera.position).normalize();
+                        sphere.velocity.multiplyScalar(8);
+                    }                    
+                });                
 
             }
 		</script>
