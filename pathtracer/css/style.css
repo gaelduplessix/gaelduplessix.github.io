@@ -1,0 +1,122 @@
+body {
+	font-size: 62.5%;
+	font-family: "Open Sans", "Trebuchet MS", "Arial", "Helvetica", "Verdana", "sans-serif";
+	background-color: #1e1e1e;
+	padding-top: 30px;
+	color: white;
+}
+
+h1 {
+	text-align: center;
+	color: white;
+	font-size: 30px;
+	font-weight: 200;
+	text-shadow: 1px 1px 3px black;
+}
+
+#content {
+	width: 1130px;
+	margin: auto;	
+}
+
+/* Hide controls before jQuery UI load */
+.accordion {
+	display: none;
+}
+
+.ui-widget {
+	display: block;
+}
+
+#canvas-view {
+	float: left;
+	border: 3px solid white;
+	cursor: all-scroll;
+	user-select: none;
+}
+
+#view-stats {
+	float: left;
+	margin-top: 5px;
+}
+
+#controls {
+	float: right;
+	width: 300px;
+	margin-top: -3px;
+	height: 460px;
+}
+
+label, .label {
+	float: left;
+}
+
+input {
+	float: left;
+	border: none;
+	margin-bottom: 10px;
+	background: transparent;
+	color: white;
+	width: 100%;
+}
+
+.vec3 {
+	width: 100%;
+    background: transparent;
+    color: white;
+}
+
+.colorpicker {
+	clear: both;
+	width: 195px;
+	margin: auto;
+	margin-top: 5px;	
+}
+
+.ui-slider {
+	float: left;
+	width: 100%;
+	margin-top: 5px;
+	margin-bottom: 10px;
+}
+
+.ui-buttonset {
+	float: left;
+	width: 100%;
+	margin-top: 5px;
+}
+
+.vector {
+	float: left;
+	width: 100%;
+	margin-top: 5px;
+}
+
+.vector input {
+	margin-left: 5px;
+	margin-right: 5px;
+	width: 60px;
+	text-align: right;
+	background: transparent;
+	color: white;
+}
+
+.vector-label {
+	float: left;
+	line-height: 19px;	
+}
+
+#materials {
+    list-style-type: none;
+    margin: 0px;
+    padding: 0px;
+}
+
+#materials li {
+    padding: 5px;
+}
+
+#new-material {
+    float: right;
+    margin: 5px 0px;
+}

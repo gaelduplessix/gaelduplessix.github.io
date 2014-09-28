@@ -1,0 +1,92 @@
+<html ng-app="pathtracer">
+	<head>
+		<title>Pathtracer</title>
+		<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+		
+		<!-- Styles -->
+		<link href="http://fonts.googleapis.com/css?family=Open+Sans:400,300" rel="stylesheet" type="text/css">
+		<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/dark-hive/jquery-ui.css">
+		
+		<link rel="stylesheet" href="css/style.css">				
+	</head>
+	<body ng-controller="PathtracerController">
+		<section class="title">
+			<h1>WebGL Real-time pathtracer</h1>
+		</section>
+		<section id="content">
+			<div id="canvas-view" pt-no-select></div>
+		    
+			<section id="controls">
+			    <div class="accordion" pt-accordion="0">
+			    	<h3>Scene</h3>
+					<div>
+						<label>Background color:</label>
+						<div class="colorpicker" pt-color-picker="scene.backgroundColor"></div>
+						<label>Exposure:</label>
+						<pt-slider value="scene.exposure" min="0" max="10" step="0.1"></pt-slider>
+						<label>Max paths length:</label>
+						<pt-slider value="scene.maxPathLength" min="1" max="8" step="1"></pt-slider>
+						<span class="label">Render Lights:</span>
+						<pt-switch value="scene.renderLights">
+							<input type="radio" value="enabled" /><label>Enabled</label>
+							<input type="radio" value="disabled" /><label>Disabled</label>
+						</pt-switch>
+					</div>
+					<h3>Camera</h3>
+					<div>
+						<span class="label">Position:</span>
+						<pt-vec3 value="scene.camera.position"></pt-vec3>
+						<span class="label">Target:</span>
+						<pt-vec3 value="scene.camera.target"></pt-vec3>
+						<label>Field of view:</label>
+						<pt-slider value="scene.camera.fovy" min="1" max="179" step="1"></pt-slider>
+						<label>Aperture:</label>
+						<pt-slider value="scene.camera.aperture" min="0" max="1" step="0.01"></pt-slider>
+						<label>Focus distance:</label>
+						<pt-float value="scene.camera.focusDistance" step="0.1"></pt-float>
+					</div>										
+					<h3>Materials</h3>
+					<div>
+						<ul id="materials">
+						    <li class="ui-state-default ui-corner-all">
+						        {{material.name}}
+						    </li>
+						</ul>
+                        <button pt-button>New material</button>
+					</div>
+					<h3>Objects</h3>
+					<div>
+						Work in progress...
+					</div>					
+					<h3>Lights</h3>
+					<div>
+						Work in progress...
+					</div>
+			    </div>
+			</section>
+			
+			<div id="view-stats"></div>
+		
+		<!-- Core JS -->		
+		<script type="text/javascript" src="//code.jquery.com/jquery-1.10.2.min.js"></script>
+		<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.1.5/angular.min.js"></script>		
+		<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
+		
+		<!-- Color Picker -->
+		<script type="text/javascript" src="js/lib/farbtastic.js"></script>
+		<link rel="stylesheet" href="css/farbtastic.css" type="text/css" />
+				
+		<script type="text/javascript" src="js/lib/stats.min.js"></script>		
+		<script type="text/javascript" src="js/lib/gl-matrix-min.js"></script>
+		
+		<!-- Pathtracer -->
+		<script type="text/javascript" src="js/Utilities.js"></script>		
+		<script type="text/javascript" src="js/Scene.js"></script>
+		<script type="text/javascript" src="js/Renderer.js"></script>
+		<script type="text/javascript" src="js/Raytracing.js"></script>
+		<script type="text/javascript" src="js/Flycam.js"></script>
+		<script type="text/javascript" src="js/Pathtracer.js"></script>
+		<script type="text/javascript" src="js/Controls.js"></script>
+		
+    </body>
+</html>
