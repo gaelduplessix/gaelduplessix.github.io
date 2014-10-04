@@ -137,6 +137,7 @@ Renderer.prototype.getShader = function(source, type) {
 	    intersectWithObjectsFunction += 'intersectWithObject(ray, objects[' + i + '], kMin, intersectedObject);';
 	    castShadowFunction += 'if (castShadowWithObject(ray, objects[' + i + '], maxDist)) {return true;}';	    
     }
+
     var k = 0;
     for (var i = 0; i < this.scene.lights.length; ++i) {
         if (this.scene.lights[i] instanceof AreaLight) {
@@ -212,8 +213,15 @@ Renderer.prototype.buildShaders = function() {
     
     this.pathTracerShader.sceneUniforms.objects = [];
     this.pathTracerShader.sceneUniforms.lights = [];
-    
-    for (var i = 0; i < this.scene.objects.length + this.scene.lights.length; ++i) {
+
+    var areaLightCount = 0;
+    for (var i = 0; i < this.scene.lights.length; ++i) {
+        if (this.scene.lights[i] instanceof AreaLight) {
+            ++areaLightCount;
+        }
+    }
+
+    for (var i = 0; i < this.scene.objects.length + areaLightCount; ++i) {
     	this.pathTracerShader.sceneUniforms.objects.push({
 	    	type: this.gl.getUniformLocation(this.pathTracerShader, 'objects[' + i + '].type'),
 	    	position: this.gl.getUniformLocation(this.pathTracerShader, 'objects[' + i + '].position'),
@@ -408,14 +416,14 @@ Renderer.prototype.setSceneUniforms = function(program) {
     var k = 0;
     for (var i = 0; i < this.scene.lights.length; ++i) {
         if (this.scene.lights[i] instanceof AreaLight) {
-            this.gl.uniform1i(program.sceneUniforms.objects[this.scene.objects.length + i].type, AreaLight.prototype.ObjectID);
-            this.gl.uniform3fv(program.sceneUniforms.objects[this.scene.objects.length + i].position, this.scene.lights[i].position);
+            this.gl.uniform1i(program.sceneUniforms.objects[this.scene.objects.length + k].type, AreaLight.prototype.ObjectID);
+            this.gl.uniform3fv(program.sceneUniforms.objects[this.scene.objects.length + k].position, this.scene.lights[i].position);
             var color = vec3.create();
             vec3.scale(color, this.scene.lights[i].color, this.scene.lights[i].intensity);
-            this.gl.uniform3fv(program.sceneUniforms.objects[this.scene.objects.length + i].material.color, color);
+            this.gl.uniform3fv(program.sceneUniforms.objects[this.scene.objects.length + k].material.color, color);
 
-            this.gl.uniform3fv(program.sceneUniforms.objects[this.scene.objects.length + i].data, this.scene.lights[i].a);
-            this.gl.uniform3fv(program.sceneUniforms.objects[this.scene.objects.length + i].data2, this.scene.lights[i].b);
+            this.gl.uniform3fv(program.sceneUniforms.objects[this.scene.objects.length + k].data, this.scene.lights[i].a);
+            this.gl.uniform3fv(program.sceneUniforms.objects[this.scene.objects.length + k].data2, this.scene.lights[i].b);
             ++k;
         }
     }
