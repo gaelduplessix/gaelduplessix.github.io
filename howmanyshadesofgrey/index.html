@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html ng-app="app">
+	<head>
+		<meta charset="utf-8">
+		<title>How many shades of grey can you see ?</title>
+		
+		<meta name="description" content="How many shades of gray can you see ? Let's figure it out with this little test...">
+		<meta name="author" content="Gael du Plessix">
+		
+		<link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css" rel="stylesheet">
+
+		<style type="text/css">
+			body {
+				background: #111;
+				color: #eee;
+			}
+
+			.shades {
+				margin-top: 10px;
+			}
+
+			.shade {
+				width: 100px;
+				height: 100px;				
+				float: left;
+			}
+		</style>
+	</head>	
+	<body ng-controller="MainController">
+
+		<div class="container">
+			<h1>How many shades of grey can you see ?</h1>
+
+			<h3>{{shades.length}} ?</h3>
+			<button class="btn btn-default" ng-click="genShades(shades.length+1)">+</button>
+
+			<div class="clearfix shades">
+				<div ng-repeat="shade in shades" class="shade" ng-style="{backgroundColor: shade}"></div>			
+			</div>
+		</div>
+					
+		<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.13/angular.min.js"></script>
+		<script type="text/javascript">
+			angular.module('app', []).controller('MainController', ['$scope', function ($scope) {
+				$scope.genShades = function (num) {
+					var i, shade;
+
+					$scope.shades = [];
+					for (i = 0; i < num; ++i) {
+						shade = (~~(0xff * (i/(num-1)))).toString(16);
+						shade = shade.length === 1 ? '0'+shade : shade;
+						$scope.shades.push('#'+shade+shade+shade);
+					}
+				};
+
+				$scope.genShades(255);
+			}]);
+		</script>
+	</body>
+
+</html>
